@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Howlstagram</string>
+    <string name="app_name">Yazzikja</string>
     <string name="facebook_app_id"></string>
     <string name="fb_login_protocol_scheme"></string>
     <string name="com.twitter.sdk.android.CONSUMER_KEY"></string>
