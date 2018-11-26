@@ -6,8 +6,11 @@ import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.android.synthetic.main.activity_add_photo.*
+import sogong.korea.prt_yazzikja.model.ContentDTO
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -15,12 +18,16 @@ class AddPhotoActivity : AppCompatActivity() {
     val PICK_IMAGE_FROM_ALBUM = 0
     var storage : FirebaseStorage? = null
     var photoUri : Uri? = null
+    var auth : FirebaseAuth? = null
+    var firestore : FirebaseFirestore? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_photo)
 
         storage = FirebaseStorage.getInstance()
+        auth = FirebaseAuth.getInstance()
+        firestore = FirebaseFirestore.getInstance()
 
         var photoPickerIntent = Intent(Intent.ACTION_PICK)
         photoPickerIntent.type = "image/*"
@@ -53,8 +60,40 @@ class AddPhotoActivity : AppCompatActivity() {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
         val imageFileName = "PNG_"+timestamp+"_.png"
         val storageRef = storage?.reference?.child("images")?.child(imageFileName) //child 는 하위경로.
-        storageRef?.putFile(photoUri!!)?.addOnSuccessListener {
-            Toast.makeText(this, getString(R.string.upload_success),Toast.LENGTH_LONG).show()
+
+        storageRef?.putFile (photoUri!!)?.addOnFailureListener {
+            Toast.makeText(this, getString(R.string.upload_fail),Toast.LENGTH_SHORT).show()
+
+        }?.addOnSuccessListener{taskSnapshot ->
+            // success
+            // downloadUrl을 받아 올수 있음.
+            storageRef.downloadUrl.addOnCompleteListener { taskSnapshot ->
+
+                Toast.makeText(this, getString(R.string.upload_success), Toast.LENGTH_SHORT).show()
+
+                var uri = taskSnapshot.result.toString()
+                //디비에 바인딩 할 위치 생성 및 컬렉션(테이블)에 데이터 집합 생성
+                //시간 생성
+                val contentDTO = ContentDTO()
+                //이미지 주소
+                contentDTO.imageUrl = uri!!.toString()
+                //유저의 UID
+                contentDTO.uid = auth?.currentUser?.uid
+                //게시물의 설명
+                contentDTO.explain = addphoto_edit_explain.text.toString()
+
+                //유저 아이디
+                contentDTO.userId = auth?.currentUser?.email
+
+                //게시물 업로드 시간
+                contentDTO.timestamp = System.currentTimeMillis()
+
+                firestore?.collection("images")?.document()?.set(contentDTO)
+
+                setResult(Activity.RESULT_OK)
+
+                finish()
+            }
         }
     }
 }
