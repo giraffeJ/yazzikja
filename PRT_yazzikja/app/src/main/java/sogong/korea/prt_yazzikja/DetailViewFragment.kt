@@ -18,7 +18,7 @@ class DetailViewFragment : Fragment(){
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
-        var firestore = FirebaseFirestore.getInstance()
+        firestore = FirebaseFirestore.getInstance()
 
         var view = LayoutInflater.from(inflater.context).inflate(R.layout.fragment_detail,container,false)
         view.detailviewfragment_recycleview.adapter = DetailRecylerviewAdapter()
@@ -38,6 +38,15 @@ class DetailViewFragment : Fragment(){
             var uid = FirebaseAuth.getInstance().currentUser?.uid
             //DB가 수정될 때 마다 수행된다 따라서 notify를 안에 넣어주어야 데이터가 바뀔때마다 호출된다.
             println("이게무슨일이야이게무슨일이야이게무슨일이야이게무슨일이야이게무슨일이야이게무슨일이야이게무슨일이야이게무슨일이야")
+            if(firestore==null){
+                println("firestore가 범인")
+            }
+            if(firestore?.collection("images")==null){
+                println("collection이 범인")
+            }
+            if(firestore?.collection("images")?.orderBy("timestamp")==null){
+                println("orderBy가 범인")
+            }
             firestore?.collection("images")?.orderBy("timestamp")?.addSnapshotListener { querySnapshot, firebaseFirestoreException ->
                 if(querySnapshot!=null) {
                     println("여기다아아아아아아ㅏ아아아아아아아아아" + querySnapshot?.size() + "쿠쿠쿠쿠쿸쿠쿠쿠쿠쿠")
