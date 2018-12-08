@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
                 return@Continuation profileimageRef.downloadUrl
             }).addOnCompleteListener { task ->
                 val downloadUri = task.result
-                map["image"] = downloadUri
+                map.put("image",downloadUri.toString())
                 println("에러체크"+map)
                 FirebaseFirestore.getInstance().collection("profileimages").document(uid).update(map)
             }
