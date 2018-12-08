@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "842022562946-2o5ifq0arb4jiu879oib8lpdu6l0aidj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sogong.korea.prt_yazzikja",
+            "certificate_hash": "dcf69078b8fd2cba0366d49c90be956d543b1dcf"
+          }
+        },
+        {
           "client_id": "842022562946-0ttlrqa3250o1c7lcbq9qremb4vto5pr.apps.googleusercontent.com",
           "client_type": 3
         }
