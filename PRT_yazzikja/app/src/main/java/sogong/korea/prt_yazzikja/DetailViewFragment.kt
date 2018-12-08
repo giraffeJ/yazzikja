@@ -8,9 +8,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.android.synthetic.main.fragment_detail.view.*
+import kotlinx.android.synthetic.main.item_detail.view.*
 import sogong.korea.prt_yazzikja.model.ContentDTO
 
 class DetailViewFragment : Fragment(){
@@ -37,22 +39,10 @@ class DetailViewFragment : Fragment(){
             //현재 로그인 된 유저의 UID
             var uid = FirebaseAuth.getInstance().currentUser?.uid
             //DB가 수정될 때 마다 수행된다 따라서 notify를 안에 넣어주어야 데이터가 바뀔때마다 호출된다.
-            println("이게무슨일이야이게무슨일이야이게무슨일이야이게무슨일이야이게무슨일이야이게무슨일이야이게무슨일이야이게무슨일이야")
-            if(firestore==null){
-                println("firestore가 범인")
-            }
-            if(firestore?.collection("images")==null){
-                println("collection이 범인")
-            }
-            if(firestore?.collection("images")?.orderBy("timestamp")==null){
-                println("orderBy가 범인")
-            }
             firestore?.collection("images")?.orderBy("timestamp")?.addSnapshotListener { querySnapshot, firebaseFirestoreException ->
+                contentDTOs.clear()
+                contentUidList.clear()
                 if(querySnapshot!=null) {
-                    println("여기다아아아아아아ㅏ아아아아아아아아아" + querySnapshot?.size() + "쿠쿠쿠쿠쿸쿠쿠쿠쿠쿠")
-                            println(querySnapshot)
-                    println("여기다아아아아아아ㅏ아아아아아아아아아" + querySnapshot?.size() + "쿠쿠쿠쿠쿸쿠쿠쿠쿠쿠")
-
                     for (snapshot in querySnapshot!!.documents) {
                         //snapshot을 ContentDTO의 폼으로 매핑함. (object화)
                         var item = snapshot.toObject(ContentDTO::class.java)
@@ -63,9 +53,6 @@ class DetailViewFragment : Fragment(){
 
                     notifyDataSetChanged()
                 }
-                else{
-                    println("비었댄다비었댄다비었댄다비었댄다비었댄다비었댄다비었댄다")
-                }
             }
         }
 
@@ -75,7 +62,7 @@ class DetailViewFragment : Fragment(){
             return CustomViewHolder(view)
         }
 
-        inner class CustomViewHolder(view: View?) : RecyclerView.ViewHolder(view) {
+        private inner class CustomViewHolder(view: View?) : RecyclerView.ViewHolder(view) {
 
         }
 
@@ -84,7 +71,52 @@ class DetailViewFragment : Fragment(){
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            //(holder as CustomViewHolder).itemView as ImageView
+            var viewHolder = (holder as CustomViewHolder).itemView
+            //유저아이디
+            viewHolder.detailviewitem_profile_textview.text = contentDTOs!![position].userId
+            //이미지 스레드 방식이라 다르게 씀.?
+            Glide.with(holder.itemView.context).load(contentDTOs!![position].imageUrl).into(viewHolder.detailviewitem_imageview_content)
+            //설명텍스트
+            viewHolder.detailviewitem_explain_textview.text = contentDTOs!![position].explain
+
+            //좋아요 카운터 설정
+            viewHolder.detailviewitem_favoritecounter_textview.text = "좋아요 " + contentDTOs!![position].favoriteCount + "개"
+            var uid = FirebaseAuth.getInstance().currentUser!!.uid
+            viewHolder.detailviewitem_favorite_imageview.setOnClickListener {
+                favoriteEvent(position)
+            }
+
+            //좋아요를 클릭
+            if(contentDTOs!![position].favorites.containsKey(uid)) {
+
+                viewHolder.detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_favorite)
+
+            //클릭하지 않았을 경우
+            }else {
+                viewHolder.detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_favorite_border)
+            }
+
+        }
+
+        private fun favoriteEvent(position: Int){
+            var tsDoc = firestore?.collection("images")?.document(contentUidList[position])
+            firestore?.runTransaction {
+                transaction ->
+                var uid = FirebaseAuth.getInstance().currentUser!!.uid
+                var contentDTO = transaction.get(tsDoc!!).toObject(ContentDTO::class.java)
+
+                if(contentDTO!!.favorites.containsKey(uid)){
+                    //좋아요를 이미 누른 상태
+                    contentDTO?.favoriteCount = contentDTO?.favoriteCount - 1
+                    contentDTO?.favorites.remove(uid)
+                }else{
+                    //좋아요를 아직 누르지 않은 상태
+                    contentDTO?.favorites[uid] = true
+                    contentDTO?.favoriteCount = contentDTO?.favoriteCount + 1
+
+                }
+                transaction.set(tsDoc,contentDTO)
+            }
         }
 
     }
